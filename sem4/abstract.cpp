@@ -11,23 +11,29 @@ class Person {
     int birth_year;
     bool vaccinated;
 public:
-    Person();   //no info provided
+    Person() { 
+        first_name = NULL; 
+        second_name = NULL;
+    }
+
     Person(char *name1, char *name2, int birth, bool vacc);
     Person(const Person& pers);
-    ~Person();
+
+    virtual ~Person();
+
     Person& operator=(const Person& p);
     friend ostream& operator<<(ostream& out, const Person& pers);
+
+//TODO
     const char *Get_name() const {
         return first_name;
     }
     const char *Get_surname() const {
         return second_name;
     }
-};
+    virtual void Get_info () const = 0;
 
-Person::Person() {
-    //no person info provided
-}
+};
 
 Person::Person(char *name1, char *name2, int birth, bool vacc) {
     if (name1 != NULL) {
@@ -86,7 +92,7 @@ public:
     Patient(const Patient& pat) : Person(pat) {
         how_long_in_hosp = pat.how_long_in_hosp;
     }
-    void Get_info(){
+    virtual void Get_info () const {
         cout << "Пациент. Пребывает в больнице " << how_long_in_hosp << " дней." << endl;
     }
     ~Patient(){}
@@ -101,7 +107,7 @@ public:
     Hospital_staff(char *name1, char *name2, int birth, bool vacc, int work_exp) : Person(name1, name2, birth, vacc) {
         work_experience = work_exp;
     }
-    void Get_info(){
+    virtual void Get_info () const {
         cout << "Мед. персонал. Стаж работы " << work_experience << " лет." << endl;
     }
     ~Hospital_staff(){}
@@ -109,12 +115,6 @@ public:
 
 int Person::persons_in_hospital = 0;
 
-int main() {
-    Patient num1;
-    Hospital_staff num2;
-    char *name = new double *[5];
-    char *surname = new double *[7];
-    int birth_date = 1982;
-    bool vacc = true;
+int main() {   
     return 0;
 }
