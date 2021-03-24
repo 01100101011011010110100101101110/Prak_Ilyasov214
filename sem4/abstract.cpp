@@ -63,8 +63,12 @@ Person::Person(const Person& pers) {
 }
 
 Person::~Person() {
-    delete[]first_name;
-    delete[]second_name;
+    if (first_name != NULL) {
+        delete[]first_name;
+    }
+    if (second_name != NULL) {
+        delete[]second_name;
+    }
     persons_in_hospital--;
 }
 
