@@ -83,6 +83,8 @@ Person& Person::operator=(const Person& pers) {
 
 ostream& operator<<(ostream& out, const Person& pers) {
     out << "ФИО: " << pers.second_name << " " << pers.first_name << endl;
+
+    return out;
 }
 
 class Patient : public Person {
