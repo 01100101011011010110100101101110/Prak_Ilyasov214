@@ -72,7 +72,13 @@ Person::~Person() {
 }
 
 Person& Person::operator=(const Person& pers) {
+    if (first_name != NULL) {
+        delete[]first_name;
+    }
     first_name=new char[strlen(pers.first_name) + 1];
+    if (second_name != NULL) {
+        delete[]second_name;
+    }
     second_name=new char[strlen(pers.second_name) + 1];
     strcpy(first_name, pers.first_name);
     strcpy(second_name,pers.second_name);
