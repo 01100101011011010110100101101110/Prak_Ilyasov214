@@ -16,7 +16,7 @@ public:
         second_name = NULL;
     }
 
-    Person(char *name1, char *name2, int birth, bool vacc);
+    Person(const char *name1, const char *name2, int birth, bool vacc);
     Person(const Person& pers);
 
     virtual ~Person();
@@ -24,7 +24,6 @@ public:
     Person& operator=(const Person& p);
     friend ostream& operator<<(ostream& out, const Person& pers);
 
-//TODO
     const char *Get_name() const {
         return first_name;
     }
@@ -35,18 +34,18 @@ public:
 
 };
 
-Person::Person(char *name1, char *name2, int birth, bool vacc) {
+Person::Person(const char *name1, const char *name2, int birth, bool vacc) {
     if (name1 != NULL) {
         first_name = new char[strlen(name1) + 1];
         strcpy(first_name, name1);
     } else {
-        //name don't provided
+        first_name = NULL;
     }
     if (name2 != NULL) {
         second_name = new char[strlen(name2) + 1];
         strcpy(second_name, name2);
     } else {
-        //surname don't provided
+        second_name = NULL;
     }
     birth_year = birth;
     vaccinated = vacc;
@@ -90,7 +89,7 @@ class Patient : public Person {
     int how_long_in_hosp;   //days
 public:
     Patient() : Person(){}
-    Patient(char *name1, char *name2, int birth, bool vacc, int how_long) : Person(name1, name2, birth, vacc) {
+    Patient(const char *name1, const char *name2, int birth, bool vacc, int how_long) : Person(name1, name2, birth, vacc) {
         how_long_in_hosp = how_long;
     }
     Patient(const Patient& pat) : Person(pat) {
@@ -108,8 +107,11 @@ class Hospital_staff : public Person {
     int work_experience;    //years
 public:
     Hospital_staff() : Person(){}
-    Hospital_staff(char *name1, char *name2, int birth, bool vacc, int work_exp) : Person(name1, name2, birth, vacc) {
+    Hospital_staff(const char *name1, const char *name2, int birth, bool vacc, int work_exp) : Person(name1, name2, birth, vacc) {
         work_experience = work_exp;
+    }
+    Hospital_staff(const Hospital_staff& staff) : Person(staff) {
+        work_experience = staff.work_experience;
     }
     virtual void Get_info () const {
         cout << "Мед. персонал. Стаж работы " << work_experience << " лет." << endl;
