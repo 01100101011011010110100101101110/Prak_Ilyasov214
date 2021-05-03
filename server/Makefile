@@ -11,4 +11,4 @@ cgi:
 	$(CC) cgi-bin/cgi.c -o cgi; mv cgi cgi-bin/
 
 clean:
-	rm -f prog cgi-bin/cgi pid*.txt
+	rm -f server cgi-bin/cgi cgi-bin/pid*.txt

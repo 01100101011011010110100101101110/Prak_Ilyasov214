@@ -13,6 +13,23 @@
 
 using namespace std;
 
+class Server {
+private:
+    int serv_sd;
+    char request[1024];
+    struct sockaddr_in saddr;
+public:
+    static short port;
+    Server(short port); //first init and just listen
+    void Run();
+	//short get_port() const { return port; }
+    ~Server() {
+        close(serv_sd);
+    }
+};
+
+short Server::port = 5000;
+
 char *itoa(int i) {
 	char *str = new char[11];
 	sprintf(str, "%d", i);
@@ -55,19 +72,14 @@ void Process_request(char *request, int serv_sd, int client_sd) {
        	send(client_sd, client_request, len, 0);
 		shutdown(client_sd, 1);
 		close(client_sd);
-        
 		return;
     }
 	int i = 5;
 	int fd;
-	while(request[i] && (request[i++] != ' ')) {
-		;
-	}
+	while(request[i] && (request[i++] != ' ')) {}
 	request[i-1] = 0;
 	i = 5;
-	while(request[i] && (request[i++] != '.')) {
-        	;
-    }
+	while(request[i] && (request[i++] != '.')) {}
 	cont_type = 2;
 	if (request[i]) {
 		if(!strncmp(request + i, "html", 4)) {
@@ -75,59 +87,59 @@ void Process_request(char *request, int serv_sd, int client_sd) {
 		} else if (!strncmp(request + i, "jpeg", 4)) {
 			cont_type = 1;
         }
-    } else if (strlen(request) > 5) {	//cgi
+    } else if (strlen(request) > 5) {
 		cont_type = 0;
-		int pid, status = 0;		//status!!
+		int pid, status = 0;
 		if ((pid = fork()) < 0) {
+            cerr << "Fork error" << endl;
 			exit(1);
-		} 
+		}
 		if (pid == 0) {
 			chdir("./cgi-bin");
+			//filename
 			char *argv[2];
-			argv[0] = new char[(int) strlen("cgi") + 1];
+			argv[0] = new char[(int)strlen("cgi") + 1];
 			strcpy(argv[0], "cgi");
 			argv[1] = NULL;
+			//log file
 			string tmp_file = "pid" + to_string(getpid()) + ".txt";
 			int tmp = open(tmp_file.c_str(), O_TRUNC | O_CREAT | O_WRONLY, 0644);
-			cerr << argv[0] << "aaa" << endl;
 			dup2(tmp, 1);
 			close(tmp);
 			int offset = char_search(request + 5, '?');
 			(request + 5)[offset] = '\0';
+			//env var
 			char **envp = new char *[7];
 			envp[0] = new char[(int) strlen("SERVER_ADDR=127.0.0.1") + 1];
 			strcpy(envp[0], "SERVER_ADDR=127.0.0.1");
 			envp[1] = new char[(int) strlen("CONTENT_TYPE=text/plain") + 1];
 			strcpy(envp[1], "CONTENT_TYPE=text/plain");
-			envp[2] = new char[(int) strlen("SERVER_PROTOCOL=HTTP/1.0") + 1];
-			strcpy(envp[2],"SERVER_PROTOCOL=HTTP/1.0");
-			envp[3] = new char[(int) strlen("SCRIPT_NAME=") + 1 + strlen(request + 5)];
-			strcpy(envp[3],"SCRIPT_NAME=");
-			strcat(envp[3], request + 5);
+			envp[2] = new char[(int) strlen("SERVER_PROTOCOL=HTTP/1.1") + 1];
+			strcpy(envp[2],"SERVER_PROTOCOL=HTTP/1.1");
+			envp[3] = new char[(int) strlen("SCRIPT_NAME=cgi-bin/cgi") + 1];
+			strcpy(envp[3],"SCRIPT_NAME=cgi-bin/cgi");
 			envp[4]=new char[(int) strlen("SERVER_PORT=") + 5];
-			char *str_port = itoa(1561);
 			strcpy(envp[4], "SERVER_PORT=");
-			strcat(envp[4], str_port);
-			delete []str_port;
-			envp[5] = new char[(int) strlen("QUERY_STRING=") + 1 + (int) strlen(request + 6 + offset)];
+			strcat(envp[4], to_string(Server::port).c_str());
+			envp[5] = new char[(int) strlen("QUERY_STRING=") + 1 + (int)strlen(request + 17)];
 			strcpy(envp[5], "QUERY_STRING=");
-			strcat(envp[5], request + 6 + offset);
+			strcat(envp[5], request + 17);
 			envp[6] = NULL;
-			cerr << argv[0] << "aaa" << endl; 
+
 			for (int i = 0; i <= 6; i++) {
-				cerr << envp[i] << " " << i << endl;
+				cerr << envp[i] << endl;
 			}
-			execvpe(argv[0], argv, envp);
+
+			execve(argv[0], argv, envp);
 			cerr << "cgi error\n";
 			delete []envp;
 			exit(1);
-			// обработка ошибок запуска
 		}
 		wait(&status);
 		if (WIFEXITED(status)) {
 			if (WEXITSTATUS(status) == 0) {
 				string tmp_file = "cgi-bin/pid" + to_string(pid) + ".txt";
-				int fd = open(tmp_file.c_str(), O_RDONLY);	//ok?
+				int fd = open(tmp_file.c_str(), O_RDONLY);
 				strcpy(client_request, "HTTP/1.0 200 OK modelserver\nServer: Model HTTP Server/0.1\nAllow: GET\nConnection: keep-alive\nDate: ");
 				time_t tm = time(NULL);
 				strcat(client_request, asctime(localtime(&tm)));
@@ -147,14 +159,13 @@ void Process_request(char *request, int serv_sd, int client_sd) {
 				
 				return;
             } else {
-				//SAME?
 				cerr << "CGI has finihed with status " << WEXITSTATUS(status) << endl;
 				int fd = open("cgi.html", O_RDONLY);
 				strcpy(client_request, "HTTP/1.0 500 Internal Server Error modelserver\nServer: Model HTTP Server/0.1\nAllow: GET\nConnection: keep-alive\nDate: ");
 				time_t tm = time(NULL);
 				strcat(client_request, asctime(localtime(&tm)));
 				strcat(client_request, "Content-length: ");
-				char *cl = itoa(fcount(fd));	//fd empty, need cgi res
+				char *cl = itoa(fcount(fd));
 				strcat(client_request, cl);
 				delete []cl;
 				strcat(client_request, "\nContent-type: text/html\n\n");
@@ -171,13 +182,12 @@ void Process_request(char *request, int serv_sd, int client_sd) {
 			}
         } else if (WIFSIGNALED(status)) {
 			cerr << "CGI has finished with signal " << WIFSIGNALED(status) << endl;
-            //Send("src/cgi.html", "HTTP/1.1 500 MyServer", Client_fd);
 			int fd = open("cgi.html", O_RDONLY);
 			strcpy(client_request, "HTTP/1.0 500 Internal Server Error modelserver\nServer: Model HTTP Server/0.1\nAllow: GET\nConnection: keep-alive\nDate: ");
 			time_t tm = time(NULL);
 			strcat(client_request, asctime(localtime(&tm)));
 			strcat(client_request, "Content-length: ");
-			char *cl = itoa(fcount(fd));	//fd empty, need cgi res
+			char *cl = itoa(fcount(fd));
 			strcat(client_request, cl);
 			delete []cl;
 			strcat(client_request, "\nContent-type: text/html\n\n");
@@ -243,20 +253,6 @@ void Process_request(char *request, int serv_sd, int client_sd) {
 	close(client_sd);
 }
 
-class Server {     
-private:
-    int serv_sd;
-    short port;
-    char request[1024];
-    struct sockaddr_in saddr;
-public:
-    Server(short port); //first init and just listen
-    void Run();
-    ~Server() {
-        close(serv_sd);
-    }
-};
-
 Server::Server(short port) {
     if ((serv_sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         //raise error
@@ -302,6 +298,7 @@ int main(int argc, char **argv) {
         cout << "Please provide user ports in range 1024-49151" << endl;
         return 0;
     }
+    Server::port = atoi(argv[1]);
     Server server(atoi(argv[1]));
     server.Run();
     return 0;
