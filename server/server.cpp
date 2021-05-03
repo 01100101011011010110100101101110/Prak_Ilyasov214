@@ -87,14 +87,14 @@ void Process_request(char *request, int serv_sd, int client_sd) {
 		} else if (!strncmp(request + i, "jpeg", 4)) {
 			cont_type = 1;
         }
-    } else if (strlen(request) > 5) {
+    } else if (!strncmp(request, "GET /cgi-bin/", 13)) {
 		cont_type = 0;
 		int pid, status = 0;
 		if ((pid = fork()) < 0) {
             cerr << "Fork error" << endl;
 			exit(1);
 		}
-		if (pid == 0) {
+		if (pid == 0) {		//need to autoparse
 			chdir("./cgi-bin");
 			//filename
 			char *argv[2];
