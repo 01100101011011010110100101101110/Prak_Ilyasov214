@@ -57,6 +57,18 @@ int char_search(char * str, char c) {
 		return j;
 }
 
+const char *get_prog_name(char *str) {
+	int j = 8;	//skip cgi-bin
+	string ans;
+	while ((str[j] != '\0') && (str[j] != '?')) {
+		ans += str[j];
+		j++;
+	}
+
+	return ans.c_str();
+
+}
+
 void Process_request(char *request, int serv_sd, int client_sd) {
 	int cont_type;
 	int len;
@@ -98,8 +110,9 @@ void Process_request(char *request, int serv_sd, int client_sd) {
 			chdir("./cgi-bin");
 			//filename
 			char *argv[2];
-			argv[0] = new char[(int)strlen("cgi") + 1];
-			strcpy(argv[0], "cgi");
+			int offset1 = char_search(request + 5, '?');
+			argv[0] = new char[offset1 + 1];
+			strcpy(argv[0], get_prog_name(request + 5));
 			argv[1] = NULL;
 			//log file
 			string tmp_file = "pid" + to_string(getpid()) + ".txt";
